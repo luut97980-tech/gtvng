@@ -1,0 +1,95 @@
+{
+  "bundle": "com.vng.playtogether",
+  "version": "2.32.0",
+  "build": "227628",
+  "framework_uuid": "1c1d8aea78c838f89a09d62cc639465d",
+  "framework_sha256": "c24b34f3f367a22e2684b8ad34f27994701aa6fbace0067d1edce22c5c5a413d",
+  "metadata_version": 39,
+  "metadata_sha256": "ddefd97ac49d5431d25757e409e4c03973c79f553c025b931da00949867cc5fb",
+  "dump_sha256": "2d121768f12f735b30c0721161aa378c4e542dd245eaf5b35830a8bcb785bb14",
+  "getter_field_checks": {
+    "ActorSystem.myActorCharacter": true,
+    "ActorSystem.otherActorCharacter": true
+  },
+  "methods": [
+    {
+      "namespace": "",
+      "class": "ActorSystem",
+      "method": "get_MyActorCharacter",
+      "declaration": "public ActorCharacter get_MyActorCharacter() { }",
+      "rva": "0x3788ae0",
+      "signature": "002c40f9c0035fd6003040f9c0035fd6"
+    },
+    {
+      "namespace": "",
+      "class": "ActorSystem",
+      "method": "get_OtherActorCharacter",
+      "declaration": "public Dictionary<long, ActorCharacter> get_OtherActorCharacter() { }",
+      "rva": "0x3788af8",
+      "signature": "003840f9c0035fd6003c40f9c0035fd6"
+    },
+    {
+      "namespace": "UnityEngine",
+      "class": "Camera",
+      "method": "get_main",
+      "declaration": "public static Camera get_main() { }",
+      "rva": "0xa0c6bbc",
+      "signature": "f44fbea9fd7b01a9fd430091138301b0"
+    },
+    {
+      "namespace": "UnityEngine",
+      "class": "Camera",
+      "method": "WorldToViewportPoint",
+      "declaration": "public Vector3 WorldToViewportPoint(Vector3 position, Camera.MonoOrStereoscopicEye eye) { }",
+      "rva": "0xa0c5510",
+      "signature": "ff4301d1f65702a9f44f03a9fd7b04a9"
+    },
+    {
+      "namespace": "UnityEngine",
+      "class": "Camera",
+      "method": "WorldToViewportPoint",
+      "declaration": "public Vector3 WorldToViewportPoint(Vector3 position) { }",
+      "rva": "0xa0c59b4",
+      "signature": "ff0301d1f44f02a9fd7b03a9fdc30091"
+    },
+    {
+      "namespace": "UnityEngine",
+      "class": "Transform",
+      "method": "get_position",
+      "declaration": "public Vector3 get_position() { }",
+      "rva": "0xa1878b0",
+      "signature": "ffc300d1f44f01a9fd7b02a9fd830091"
+    },
+    {
+      "namespace": "",
+      "class": "ActorControl",
+      "method": "OnJump",
+      "declaration": "public virtual void OnJump() { }",
+      "rva": "0x3446d24",
+      "signature": "c0035fd6c0035fd6c0035fd6c0035fd6"
+    },
+    {
+      "namespace": "",
+      "class": "ActorDefaultControlPlayer",
+      "method": "OnJump",
+      "declaration": "public override void OnJump() { }",
+      "rva": "0x372ea40",
+      "signature": "f44fbea9fd7b01a9fd43009108404039"
+    },
+    {
+      "namespace": "",
+      "class": "ActorMiniGameControl",
+      "method": "OnJump",
+      "declaration": "public override void OnJump() { }",
+      "rva": "0x3808f9c",
+      "signature": "f657bda9f44f01a9fd7b02a9fd830091"
+    }
+  ],
+  "launcher_sha256": "2e671d3f4bc1534b06796a0ed37963701ee4a55ef66287167ab4c96e50eb5a64",
+  "checks_scope": "Selected ARM64 methods and two independently decoded field getters, not a full game verification",
+  "menu_revision": 5,
+  "features": [
+    "esp",
+    "spam_jump"
+  ]
+}

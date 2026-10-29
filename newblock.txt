@@ -1,0 +1,130 @@
+    // Clears a managed HashSet/Dictionary by calling Clear(), falling back to
+    // zeroing _count when the method cannot be resolved. Both types keep _count
+    // at 0x20: object header 0x10, buckets 0x10, slots/entries 0x18, count 0x20.
+    bool clearCollectionObject(Obj coll){
+        if(!isValidObjectPointer(coll))return false;
+        std::int32_t count=0;
+        if(!safeReadAt(coll,0x20,count)||count<=0)return false;
+        try{
+            if(Method mClear=tryMethod(a.object_get_class(coll),"Clear",0)){
+                invoke(mClear,coll);
+                return true;
+            }
+        }catch(...){}
+        std::int32_t zero=0;
+        return safeWriteAt(coll,0x20,zero);
+    }
+
+    bool clearCollectionField(Obj owner,std::size_t offset){
+        Obj coll=nullptr;
+        if(!safeReadAt(owner,offset,coll))return false;
+        return clearCollectionObject(coll);
+    }
+
+    // Live object scrub. Runs whether or not the method stubs armed: this is
+    // what clears a detection that fired before the stubs landed, or one that
+    // arrived through a path the managed stubs do not cover.
+    //
+    // Offsets are from dump.cs, not guessed:
+    //   AntiCheatListener   ReceiveCB 0x38, _dectectHashSet 0x50, CodeHashDic 0x78
+    //   ModuleSystem        _cheatDetectDic 0x40, _nextCheatDetectT 0x48
+    //   SpeedHackScanner    detectionEvent 0x20, detectionAction 0x28, isRunning 0x30
+    //   GPrestoEngine       static detected_types 0x00   (static_fields at klass+0xB8)
+    //   SpeedHackProofTime  static speedHackDetected 0x01, warningShot 0x1C
+    //   GPresto.Protector.SpeedHack  static isPaused 0x03, currentFalsePositives 0x24
+    void sanitizeLiveAntiCheat(double now){
+        if(!a.hasNativeLayout||now<nextAntiCheatSanitize)return;
+        // Anything found dirty buys a 50 ms second look. A detector that fires
+        // between two 250 ms passes would otherwise stay dirty for a quarter of
+        // a second, which is more than enough for the report timer to flush.
+        nextAntiCheatSanitize=now+(sanitizeHits>0?0.05:0.25);
+        int hits=0;
+        Obj nullObj=nullptr;
+
+        // 1. FrameWork.Instance -> AntiCheatListener (+0x158) and ModuleSystem (+0xE8)
+        if(Klass fwk=tryGame("FrameWork")){
+            if(Obj fw=readSingletonInstance(fwk,"FrameWork")){
+                Obj acl=nullptr;
+                if(safeReadAt(fw,0x158,acl)&&isValidObjectPointer(acl)&&classLabel(acl)=="AntiCheatListener"){
+                    Obj cb=nullptr;
+                    if(safeReadAt(acl,0x38,cb)&&cb&&safeWriteAt(acl,0x38,nullObj))++hits;
+                    if(clearCollectionField(acl,0x50))++hits;
+                    if(clearCollectionField(acl,0x78))++hits;
+                }
+                Obj modSys=nullptr;
+                if(safeReadAt(fw,0xE8,modSys)&&isValidObjectPointer(modSys)&&classLabel(modSys)=="ModuleSystem"){
+                    float nextT=0.f;
+                    if(safeReadAt(modSys,0x48,nextT)&&nextT<1e8f){
+                        float farFuture=1e9f;
+                        if(safeWriteAt(modSys,0x48,farFuture))++hits;
+                    }
+                    if(clearCollectionField(modSys,0x40))++hits;
+                }
+            }
+        }
+
+        // 2. GPresto.Protector.Engine.GPrestoEngine.detected_types
+        if(Klass gpEng=tryKlass(nullptr,"GPresto.Protector.Engine","GPrestoEngine")){
+            void* statics=nullptr;
+            if(safeReadAt(gpEng,0xB8,statics)&&statics){
+                Obj detSet=nullptr;
+                if(safeReadAt(statics,0x0,detSet)&&clearCollectionObject(detSet))++hits;
+            }
+        }
+
+        // 3. SpeedHackScanner.Instance - disarm the timer, the action and the event
+        if(Klass shsKlass=tryGame("SpeedHackScanner")){
+            void* statics=nullptr;
+            if(safeReadAt(shsKlass,0xB8,statics)&&statics){
+                Obj inst=nullptr;
+                if(safeReadAt(statics,0x8,inst)&&isValidObjectPointer(inst)&&classLabel(inst)=="SpeedHackScanner"){
+                    Obj del=nullptr;
+                    if(safeReadAt(inst,0x28,del)&&del&&safeWriteAt(inst,0x28,nullObj))++hits;
+                    Obj evt=nullptr;
+                    if(safeReadAt(inst,0x20,evt)&&evt&&safeWriteAt(inst,0x20,nullObj))++hits;
+                    std::uint8_t running=0;
+                    if(safeReadAt(inst,0x30,running)&&running!=0){
+                        std::uint8_t zero8=0;
+                        if(safeWriteAt(inst,0x30,zero8))++hits;
+                    }
+                }
+            }
+        }
+
+        // 4. SpeedHackProofTime statics: the detected flag and the warning shot
+        if(Klass shptKlass=tryKlass(nullptr,"CodeStage.AntiCheat.Time","SpeedHackProofTime")){
+            void* statics=nullptr;
+            if(safeReadAt(shptKlass,0xB8,statics)&&statics){
+                std::uint8_t flag=0;
+                if(safeReadAt(statics,0x1,flag)&&flag!=0){
+                    std::uint8_t zero8=0;
+                    if(safeWriteAt(statics,0x1,zero8))++hits;
+                }
+                flag=0;
+                if(safeReadAt(statics,0x1C,flag)&&flag!=0){
+                    std::uint8_t zero8=0;
+                    if(safeWriteAt(statics,0x1C,zero8))++hits;
+                }
+            }
+        }
+
+        // 5. GPresto.Protector.SpeedHack statics: park the scanner and drop the
+        //    false-positive counter so a stale streak cannot tip over later.
+        if(Klass gpSh=tryKlass(nullptr,"GPresto.Protector","SpeedHack")){
+            void* statics=nullptr;
+            if(safeReadAt(gpSh,0xB8,statics)&&statics){
+                std::uint8_t paused=0;
+                if(safeReadAt(statics,0x3,paused)&&paused==0){
+                    std::uint8_t one=1;
+                    if(safeWriteAt(statics,0x3,one))++hits;
+                }
+                std::int32_t falsePos=0;
+                if(safeReadAt(statics,0x24,falsePos)&&falsePos!=0){
+                    std::int32_t zero32=0;
+                    if(safeWriteAt(statics,0x24,zero32))++hits;
+                }
+            }
+        }
+
+        sanitizeHits=hits;
+    }

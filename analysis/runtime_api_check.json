@@ -1,0 +1,10 @@
+{
+  "framework_bytes": 226299760,
+  "framework_sha256": "c24b34f3f367a22e2684b8ad34f27994701aa6fbace0067d1edce22c5c5a413d",
+  "required_api_count": 26,
+  "all_required_exports_present": true,
+  "matched_method_count": 9,
+  "runtime_guard_count": 7,
+  "real_launcher_header_padding_check": true,
+  "on_jump_signatures_verified_by_rar_stream_sha256": true
+}
